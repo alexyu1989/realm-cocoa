@@ -206,9 +206,9 @@ NSArray *RLMCollectionValueForKey(Collection& collection, NSString *key,
             RLMAccessorContext context(realm, info);
             for (size_t i = 0; i < count; ++i) {
                 RLMListBase *list = [[cls alloc] init];
-                list._rlmArray = [[RLMManagedArray alloc] initWithList:realm::List(realm->_realm, *info.table(),
-                                                                                   info.tableColumn(prop),
-                                                                                   collection.get(i).get_index())
+                list._rlmArray = [[RLMManagedArray alloc] initWithList:realm::List(realm->_realm, 
+                                                                                   collection.get(i),
+                                                                                   info.tableColumn(prop))
                                                                  realm:realm parentInfo:&info
                                                               property:prop];
                 [array addObject:list];

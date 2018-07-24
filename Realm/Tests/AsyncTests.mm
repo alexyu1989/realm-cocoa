@@ -384,6 +384,7 @@
     [token2 invalidate];
 }
 
+#if 0
 - (void)testErrorHandling {
     RLMRealm *realm = [RLMRealm defaultRealm];
     XCTestExpectation *exp = [self expectationWithDescription:@""];
@@ -429,6 +430,7 @@
     [token invalidate];
     [token2 invalidate];
 }
+#endif
 
 - (void)testRLMResultsInstanceIsReused {
     __weak __block RLMResults *prev;
@@ -612,7 +614,7 @@
     }
 
     // Let the background job run now
-    auto coord = realm::_impl::RealmCoordinator::get_existing_coordinator(config.config.path);
+    auto coord = realm::_impl::RealmCoordinator::get_coordinator(config.config.path);
     coord->on_change();
 
     for (int i = 7; i < 10; ++i) {

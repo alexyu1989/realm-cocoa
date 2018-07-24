@@ -1057,15 +1057,16 @@
     RLMRealm *realm = [self realmWithTestPath];
 
     [realm beginWriteTransaction];
-    IntObject *objectToDelete = [IntObject createInRealm:realm withValue:@[@0]];
+    IntObject *objectToDelete = [IntObject createInRealm:realm withValue:@[@5]];
     [realm commitWriteTransaction];
 
     [realm beginWriteTransaction];
     [realm deleteObject:objectToDelete];
     [realm cancelWriteTransaction];
 
-    XCTAssertTrue(objectToDelete.isInvalidated);
+    XCTAssertFalse(objectToDelete.isInvalidated);
     XCTAssertEqual(1U, [IntObject allObjectsInRealm:realm].count);
+    XCTAssertEqual(5, objectToDelete.intCol);
 }
 
 - (void)testRollbackModify

@@ -86,8 +86,7 @@
                            property:(__unsafe_unretained RLMProperty *const)property {
     __unsafe_unretained RLMRealm *const realm = parentObject->_realm;
     auto col = parentObject->_info->tableColumn(property);
-    auto& row = parentObject->_row;
-    return [self initWithList:realm::List(realm->_realm, *row.get_table(), col, row.get_index())
+    return [self initWithList:realm::List(realm->_realm, parentObject->_row, col)
                         realm:realm
                    parentInfo:parentObject->_info
                      property:property];
@@ -109,7 +108,7 @@ void RLMEnsureArrayObservationInfo(std::unique_ptr<RLMObservationInfo>& info,
     if (!info && array.class == [RLMManagedArray class]) {
         auto lv = static_cast<RLMManagedArray *>(array);
         info = std::make_unique<RLMObservationInfo>(*lv->_ownerInfo,
-                                                    lv->_backingList.get_origin_row_index(),
+                                                    lv->_backingList.get_parent_object_key().value,
                                                     observed);
     }
 }
@@ -181,7 +180,7 @@ static void changeArray(__unsafe_unretained RLMManagedArray *const ar,
                         NSKeyValueChange kind, dispatch_block_t f, IndexSetFactory&& is) {
     translateErrors([&] { ar->_backingList.verify_in_transaction(); });
     RLMObservationInfo *info = RLMGetObservationInfo(ar->_observationInfo.get(),
-                                                     ar->_backingList.get_origin_row_index(),
+                                                     ar->_backingList.get_parent_object_key().value,
                                                      *ar->_ownerInfo);
     if (info) {
         NSIndexSet *indexes = is();
@@ -405,7 +404,7 @@ static void RLMInsertObject(RLMManagedArray *ar, id object, NSUInteger index) {
 
 - (size_t)columnForProperty:(NSString *)propertyName {
     if (_backingList.get_type() == realm::PropertyType::Object) {
-        return _objectInfo->tableColumn(propertyName);
+        return _objectInfo->tableColumn(propertyName).value;
     }
     if (![propertyName isEqualToString:@"self"]) {
         @throw RLMException(@"Arrays of '%@' can only be aggregated on \"self\"", RLMTypeToString(_type));

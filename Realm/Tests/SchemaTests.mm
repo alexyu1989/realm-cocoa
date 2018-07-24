@@ -1054,7 +1054,8 @@ RLM_ARRAY_TYPE(NotARealClass)
         config.dynamic = true;
         RLMRealm *realm = [RLMRealm realmWithConfiguration:config error:nil];
         [realm beginWriteTransaction];
-        realm->_info[@"IntObject"].table()->insert_column(0, realm::type_String, "col");
+        auto table = realm->_info[@"IntObject"].table();
+        table->add_column(realm::type_String, realm::util::format("col%1", table->get_column_count()).c_str());
         [realm commitWriteTransaction];
         return;
     }

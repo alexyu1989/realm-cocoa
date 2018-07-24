@@ -45,7 +45,7 @@ static void RLMAssertRealmSchemaMatchesTable(id self, RLMRealm *realm) {
         TableRef table = ObjectStore::table_for_object_type(realm.group, objectSchema.objectName.UTF8String);
         for (RLMProperty *property in objectSchema.properties) {
             auto column = info.tableColumn(property);
-            XCTAssertEqual(column, table->get_column_index(RLMStringDataWithNSString(property.columnName)));
+            XCTAssertEqual(column, table->get_column_key(RLMStringDataWithNSString(property.columnName)));
             XCTAssertEqual(property.indexed || property.isPrimary, table->has_search_index(column));
         }
     }

@@ -273,7 +273,7 @@ static inline void RLMResultsValidateInWriteTransaction(__unsafe_unretained RLMR
 }
 
 - (NSNumber *)_aggregateForKeyPath:(NSString *)keyPath
-                            method:(util::Optional<Mixed> (Results::*)(size_t))method
+                            method:(util::Optional<Mixed> (Results::*)(ColKey))method
                         methodName:(NSString *)methodName returnNilForEmpty:(BOOL)returnNilForEmpty {
     assertKeyPathIsNotNested(keyPath);
     return [self aggregate:keyPath method:method methodName:methodName returnNilForEmpty:returnNilForEmpty];
@@ -395,12 +395,12 @@ static inline void RLMResultsValidateInWriteTransaction(__unsafe_unretained RLMR
     return [self objectAtIndex:index];
 }
 
-- (id)aggregate:(NSString *)property method:(util::Optional<Mixed> (Results::*)(size_t))method
+- (id)aggregate:(NSString *)property method:(util::Optional<Mixed> (Results::*)(ColKey))method
      methodName:(NSString *)methodName returnNilForEmpty:(BOOL)returnNilForEmpty {
     if (_results.get_mode() == Results::Mode::Empty) {
         return returnNilForEmpty ? nil : @0;
     }
-    size_t column = 0;
+    ColKey column;
     if (self.type == RLMPropertyTypeObject || ![property isEqualToString:@"self"]) {
         column = _info->tableColumn(property);
     }
@@ -428,7 +428,7 @@ static inline void RLMResultsValidateInWriteTransaction(__unsafe_unretained RLMR
     if (_results.get_mode() == Results::Mode::Empty) {
         return nil;
     }
-    size_t column = 0;
+    ColKey column;
     if (self.type == RLMPropertyTypeObject || ![property isEqualToString:@"self"]) {
         column = _info->tableColumn(property);
     }

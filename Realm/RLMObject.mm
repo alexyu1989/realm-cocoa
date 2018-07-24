@@ -231,7 +231,7 @@
 @end
 
 @implementation RLMWeakObjectHandle {
-    realm::Row _row;
+    realm::Obj _row;
     RLMClassInfo *_info;
     Class _objectClass;
 }
@@ -332,11 +332,8 @@ RLMNotificationToken *RLMObjectAddNotificationBlock(RLMObjectBase *obj, RLMObjec
             }
 
             auto properties = [NSMutableArray new];
-            for (size_t i = 0; i < c.columns.size(); ++i) {
-                if (c.columns[i].empty()) {
-                    continue;
-                }
-                if (auto prop = object->_info->propertyForTableColumn(i)) {
+            for (auto& column : c.columns) {
+                if (auto prop = object->_info->propertyForTableColumn(realm::ColKey(column.first))) {
                     [properties addObject:prop.name];
                 }
             }

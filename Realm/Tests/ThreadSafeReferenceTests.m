@@ -178,6 +178,7 @@
     XCTAssertEqualObjects(@"Breezy", object.dogs[1].dogName);
 }
 
+#if 0
 - (void)testPassThreadSafeReferenceToResults {
     RLMRealm *realm = [RLMRealm defaultRealm];
     RLMResults<StringObject *> *allObjects = [StringObject allObjects];
@@ -277,5 +278,6 @@
     XCTAssertEqual(1ul, unaccessedDogB.owners.count);
     XCTAssertEqualObjects(@"Andrea", ((OwnerObject *)unaccessedDogB.owners[0]).name);
 }
+#endif
 
 @end

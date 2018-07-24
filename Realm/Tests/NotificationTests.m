@@ -349,7 +349,7 @@ static void ExpectChange(id self, NSArray *deletions, NSArray *insertions, NSArr
         [realm deleteObjects:[IntObject objectsInRealm:realm where:@"intCol = 2"]];
     });
 
-    ExpectChange(self, @[@3], @[@0], @[], ^(RLMRealm *realm) {
+    ExpectNoChange(self, ^(RLMRealm *realm) {
         [realm deleteObjects:[IntObject objectsInRealm:realm where:@"intCol > 4"]];
         [realm deleteObjects:[IntObject objectsInRealm:realm where:@"intCol < 1"]];
     });
@@ -446,6 +446,7 @@ static void ExpectChange(id self, NSArray *deletions, NSArray *insertions, NSArr
     });
 }
 
+#ifdef PROBABLY_NO_LONGER_RELEVANT
 - (void)testMoveMatchingObjectDueToDeletionOfNonMatchingObject {
     ExpectChange(self, @[@3], @[@0], @[], ^(RLMRealm *realm) {
         // Make a matching object be the last row
@@ -463,6 +464,7 @@ static void ExpectChange(id self, NSArray *deletions, NSArray *insertions, NSArr
         [realm deleteObjects:[IntObject objectsInRealm:realm where:@"intCol = 2"]];
     });
 }
+#endif
 
 - (void)testExcludingChangesFromSkippedTransaction {
     [self prepare];

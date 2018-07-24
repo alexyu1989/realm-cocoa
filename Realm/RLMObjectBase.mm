@@ -282,7 +282,7 @@ id RLMCreateManagedAccessor(Class cls, __unsafe_unretained RLMRealm *realm, RLMC
 
 - (BOOL)isInvalidated {
     // if not unmanaged and our accessor has been detached, we have been deleted
-    return self.class == _objectSchema.accessorClass && !_row.is_attached();
+    return self.class == _objectSchema.accessorClass && !_row.is_valid();
 }
 
 - (BOOL)isEqual:(id)object {
@@ -380,7 +380,7 @@ id RLMCreateManagedAccessor(Class cls, __unsafe_unretained RLMRealm *realm, RLMC
     }
     NSString *objectClassName = @(object.get_object_schema().name.c_str());
 
-    return RLMCreateObjectAccessor(realm, realm->_info[objectClassName], object.row().get_index());
+    return RLMCreateObjectAccessor(realm, realm->_info[objectClassName], object.obj());
 }
 
 @end
@@ -438,12 +438,12 @@ BOOL RLMObjectBaseAreEqual(RLMObjectBase *o1, RLMObjectBase *o2) {
         return NO;
     }
     // if either are detached
-    if (!o1->_row.is_attached() || !o2->_row.is_attached()) {
+    if (!o1->_row.is_valid() || !o2->_row.is_valid()) {
         return NO;
     }
     // if table and index are the same
     return o1->_row.get_table() == o2->_row.get_table()
-        && o1->_row.get_index() == o2->_row.get_index();
+        && o1->_row.get_key() == o2->_row.get_key();
 }
 
 id RLMValidatedValueForProperty(id object, NSString *key, NSString *className) {

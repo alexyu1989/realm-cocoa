@@ -92,6 +92,7 @@
     }
 }
 
+#if 0
 - (void)testCompactOnLaunchBeginWriteFailed {
     if (self.isParent) {
         RLMRealm *realm = [RLMRealm defaultRealm];
@@ -141,6 +142,7 @@
         XCTAssertTrue(blockCalled);
     }
 }
+#endif
 
 - (void)testOpenInParentThenAddObjectInChild {
     RLMRealm *realm = [RLMRealm defaultRealm];
@@ -291,6 +293,7 @@
     [token invalidate];
 }
 
+#if 0
 - (void)testManyWriters {
     const int stopValue = 100;
     const int workers = 10;
@@ -365,6 +368,7 @@
         nextRun = obj.intCol + arc4random() % 10;
     }
 }
+#endif
 
 - (void)testRecoverAfterCrash {
     if (self.isParent) {

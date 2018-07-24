@@ -934,6 +934,7 @@ static vm_size_t get_resident_size() {
     XCTAssertThrows({for (__unused id obj in results);});
 }
 
+#if 0
 - (void)testResultsDependingOnDeletedLinkView {
     RLMRealm *realm = [RLMRealm defaultRealm];
     __block IntegerArrayPropertyObject *object;
@@ -987,6 +988,7 @@ static vm_size_t get_resident_size() {
     XCTAssertEqualObjects(nil, results.firstObject);
     XCTAssertEqualObjects(nil, unevaluatedResults.firstObject);
 }
+#endif
 
 - (void)testResultsDependingOnLinkingObjects {
     RLMRealm *realm = [RLMRealm defaultRealm];

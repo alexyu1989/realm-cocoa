@@ -210,10 +210,10 @@ Table& get_table(Group& group, RLMObjectSchema *objectSchema)
 class ColumnReference {
 public:
     ColumnReference(Query& query, Group& group, RLMSchema *schema, RLMProperty* property, const std::vector<RLMProperty*>& links = {})
-    : m_links(links), m_property(property), m_schema(schema), m_group(&group), m_query(&query), m_table(query.get_table().get())
+    : m_links(links), m_property(property), m_schema(schema), m_group(&group), m_query(&query), m_table(query.get_table())
     {
-        auto& table = walk_link_chain([](Table&, size_t, RLMPropertyType) { });
-        m_index = table.get_column_index(m_property.columnName.UTF8String);
+        auto& table = walk_link_chain([](Table&, ColKey, RLMPropertyType) { });
+        m_col = table.get_column_key(m_property.columnName.UTF8String);
     }
 
     template <typename T, typename... SubQuery>
@@ -222,7 +222,7 @@ public:
         static_assert(sizeof...(SubQuery) < 2, "resolve() takes at most one subquery");
         set_link_chain_on_table();
         if (type() != RLMPropertyTypeLinkingObjects) {
-            return m_table->template column<T>(index(), std::forward<SubQuery>(subquery)...);
+            return m_table->template column<T>(column(), std::forward<SubQuery>(subquery)...);
         }
         else {
             return resolve_backlink<T>(std::forward<SubQuery>(subquery)...);
@@ -230,7 +230,7 @@ public:
     }
 
     RLMProperty *property() const { return m_property; }
-    size_t index() const { return m_index; }
+    ColKey column() const { return m_col; }
     RLMPropertyType type() const { return property().type; }
     Group& group() const { return *m_group; }
 
@@ -273,7 +273,7 @@ private:
     template <typename T, typename... SubQuery>
     auto do_resolve_backlink(std::true_type, SubQuery&&... subquery) const
     {
-        return with_link_origin(m_property, [&](Table& table, size_t col) {
+        return with_link_origin(m_property, [&](Table& table, ColKey col) {
             return m_table->template column<T>(table, col, std::forward<SubQuery>(subquery)...);
         });
     }
@@ -289,15 +289,15 @@ private:
     template<typename Func>
     Table& walk_link_chain(Func&& func) const
     {
-        auto table = m_query->get_table().get();
+        Table *table = m_query->get_table();
         for (const auto& link : m_links) {
             if (link.type != RLMPropertyTypeLinkingObjects) {
-                auto index = table->get_column_index(link.columnName.UTF8String);
+                auto index = table->get_column_key(link.columnName.UTF8String);
                 func(*table, index, link.type);
-                table = table->get_link_target(index).get();
+                table = table->get_link_target(index);
             }
             else {
-                with_link_origin(link, [&](Table& link_origin_table, size_t link_origin_column) {
+                with_link_origin(link, [&](Table& link_origin_table, ColKey link_origin_column) {
                     func(link_origin_table, link_origin_column, link.type);
                     table = &link_origin_table;
                 });
@@ -312,13 +312,13 @@ private:
         RLMObjectSchema *link_origin_schema = m_schema[prop.objectClassName];
         Table& link_origin_table = get_table(*m_group, link_origin_schema);
         NSString *column_name = link_origin_schema[prop.linkOriginPropertyName].columnName;
-        size_t link_origin_column = link_origin_table.get_column_index(column_name.UTF8String);
+        auto link_origin_column = link_origin_table.get_column_key(column_name.UTF8String);
         return func(link_origin_table, link_origin_column);
     }
 
     void set_link_chain_on_table() const
     {
-        walk_link_chain([&](Table& current_table, size_t column, RLMPropertyType type) {
+        walk_link_chain([&](Table& current_table, ColKey column, RLMPropertyType type) {
             if (type == RLMPropertyTypeLinkingObjects) {
                 m_table->backlink(current_table, column);
             }
@@ -334,7 +334,7 @@ private:
     Group *m_group;
     Query *m_query;
     Table *m_table;
-    size_t m_index;
+    ColKey m_col;
 };
 
 class CollectionOperation {
@@ -495,10 +495,10 @@ public:
     void add_constraint(RLMPropertyType type,
                         NSPredicateOperatorType operatorType,
                         NSComparisonPredicateOptions predicateOptions,
-                        L lhs, R rhs);
+                        L const& lhs, R const& rhs);
     template <typename... T>
     void do_add_constraint(RLMPropertyType type, NSPredicateOperatorType operatorType,
-                           NSComparisonPredicateOptions predicateOptions, T... values);
+                           NSComparisonPredicateOptions predicateOptions, T&&... values);
     void do_add_constraint(RLMPropertyType, NSPredicateOperatorType, NSComparisonPredicateOptions, id, realm::null);
 
     void add_between_constraint(const ColumnReference& column, id value);
@@ -747,7 +747,7 @@ void QueryBuilder::add_binary_constraint(NSPredicateOperatorType operatorType,
                                          BinaryData value) {
     RLMPrecondition(!column.has_links(), @"Unsupported operator", @"NSData properties cannot be queried over an object link.");
 
-    size_t index = column.index();
+    auto index = column.column();
     Query query = m_query.get_table()->where();
 
     switch (operatorType) {
@@ -918,7 +918,7 @@ auto value_of_type(const ColumnReference& column) {
 
 template <typename... T>
 void QueryBuilder::do_add_constraint(RLMPropertyType type, NSPredicateOperatorType operatorType,
-                                     NSComparisonPredicateOptions predicateOptions, T... values)
+                                     NSComparisonPredicateOptions predicateOptions, T&&... values)
 {
     static_assert(sizeof...(T) == 2, "do_add_constraint accepts only two values as arguments");
 
@@ -973,7 +973,7 @@ bool is_nsnull(T) {
 
 template <typename L, typename R>
 void QueryBuilder::add_constraint(RLMPropertyType type, NSPredicateOperatorType operatorType,
-                                  NSComparisonPredicateOptions predicateOptions, L lhs, R rhs)
+                                  NSComparisonPredicateOptions predicateOptions, L const& lhs, R const& rhs)
 {
     // The expression operators are only overloaded for realm::null on the rhs
     RLMPrecondition(!is_nsnull(lhs), @"Unsupported operator",
@@ -1059,7 +1059,7 @@ void validate_property_value(const ColumnReference& column,
                         @"Invalid value", err, RLMTypeToString(prop.type), keyPath, objectSchema.className, value);
     }
     if (RLMObjectBase *obj = RLMDynamicCast<RLMObjectBase>(value)) {
-        RLMPrecondition(!obj->_row.is_attached() || &column.group() == &obj->_realm.group,
+        RLMPrecondition(!obj->_row.is_valid() || &column.group() == &obj->_realm.group,
                         @"Invalid value origin", @"Object must be from the Realm being queried");
     }
 }
@@ -1082,7 +1082,7 @@ struct ValueOfTypeWithCollectionOperationHelper<T, OperationType> { \
     static auto convert(const CollectionOperation& operation) \
     { \
         REALM_ASSERT(operation.type() == OperationType); \
-        auto targetColumn = operation.link_column().resolve<Link>().template column<T>(operation.column().index()); \
+        auto targetColumn = operation.link_column().resolve<Link>().template column<T>(operation.column().column()); \
         return targetColumn.function(); \
     } \
 } \
@@ -1321,8 +1321,9 @@ void QueryBuilder::apply_subquery_count_expression(RLMObjectSchema *objectSchema
     subqueryPredicate = transformPredicate(subqueryPredicate, simplify_self_value_for_key_path_function_expression);
 
     Query subquery = RLMPredicateToQuery(subqueryPredicate, collectionMemberObjectSchema, m_schema, m_group);
-    add_numeric_constraint(RLMPropertyTypeInt, operatorType,
-                           collectionColumn.resolve<LinkList>(std::move(subquery)).count(), value);
+//    add_numeric_constraint(RLMPropertyTypeInt, operatorType,
+//                           collectionColumn.resolve<LnkLst>(std::move(subquery)).count(), value);
+    @throw RLMException(@"FIXME");
 }
 
 void QueryBuilder::apply_function_subquery_expression(RLMObjectSchema *objectSchema, NSExpression *functionExpression,
