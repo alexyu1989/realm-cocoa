@@ -2553,6 +2553,11 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 5D6156F71BE07B6B00A4BD3F /* TestHost.xcconfig */;
 			buildSettings = {
+				"OTHER_LDFLAGS[sdk=macosx*]" = (
+					"-framework",
+					Cocoa,
+					"-fsanitize=address",
+				);
 			};
 			name = Debug;
 		};
@@ -2584,6 +2589,10 @@
 				CLANG_ENABLE_MODULES = YES;
 				DEFINES_MODULE = YES;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				"OTHER_LDFLAGS[sdk=macosx*]" = (
+					"-lrealm$(REALM_LIBRARY_SUFFIX)",
+					"-fsanitize=address",
+				);
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 3.0;
 			};

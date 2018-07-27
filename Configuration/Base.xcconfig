@@ -45,9 +45,10 @@ GCC_WARN_UNUSED_VARIABLE = YES;
 SWIFT_COMPILATION_MODE = wholemodule;
 SWIFT_OPTIMIZATION_LEVEL = -Owholemodule;
 WARNING_CFLAGS = -Wmismatched-tags -Wunused-private-field -Wpartial-availability;
-OTHER_CFLAGS = -fvisibility-inlines-hidden;
+OTHER_CFLAGS = -fvisibility-inlines-hidden -fsanitize=address;
+OTHER_LDFLAGS = -fsanitize=address;
 
-OTHER_CPLUSPLUSFLAGS = $(inherited) -isystem core/include;
+OTHER_CPLUSPLUSFLAGS = $(inherited) -isystem core/include -fsanitize=address;
 HEADER_SEARCH_PATHS = $(inherited) Realm/ObjectStore/src;
 
 CODE_SIGN_IDENTITY[sdk=iphone*] = iPhone Developer;
